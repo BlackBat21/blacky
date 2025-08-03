@@ -274,7 +274,7 @@ systemctl reload nginx
 # 8. Generate URI + QR code   #
 ################################
 
-URI="vless://${UUID}@${SERVER}:443?type=tcp&encryption=none&security=reality&pbk=${PUBLIC_KEY}&sid=${SHORT_ID}&fp=${FINGERPRINT}&sni=${SNI}#${SNI}"
+URI="vless://${UUID}@${SERVER}:443?type=tcp&encryption=none&security=reality&pbk=${PUBLIC_KEY}&sid=${SHORT_ID}&fp=${FINGERPRINT}&sni=${SNI}#${SHORT_ID}-${SNI}"
 
 cat <<GENERATE
 

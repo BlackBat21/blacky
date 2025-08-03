@@ -63,7 +63,7 @@ Typical successful output ends with something like:
 
 ```
 Generated VLESS+REALITY URI (copy or scan):
-vless://1111...@203.0.113.10:443?type=tcp&encryption=none&security=reality&pbk=...#www.cloudflare.com
+vless://1111...@203.0.113.10:443?type=tcp&encryption=none&security=reality&pbk=...#a1b2c3d4-www.cloudflare.com
 ✔ Xray-core VLESS + REALITY installation completed!
 ```
 
@@ -167,7 +167,7 @@ Both installation and user addition scripts provide consistent output:
 
 ```
 Generated VLESS+REALITY URI (copy or scan):
-vless://uuid@server:443?type=tcp&encryption=none&security=reality&pbk=key&sid=shortid&fp=chrome&sni=domain#domain
+vless://uuid@server:443?type=tcp&encryption=none&security=reality&pbk=key&sid=shortid&fp=chrome&sni=domain#shortid-domain
 
 [ASCII QR CODE displayed here]
 
@@ -231,9 +231,10 @@ mobile       ❌ (contains 'm', 'i', 'l')
 ```
 
 ### Usage Tips:
-- Use Short IDs as connection names in your VPN client
-- Choose memorable hex combinations like `face`, `dead`, `beef`
+- Connection names combine Short ID and SNI domain for better identification
+- Choose memorable hex combinations like `face`, `dead`, `beef` for easy recognition
 - Auto-generated Short IDs are 8 characters long for good uniqueness
+- Connection will display as "shortid-domain" (e.g., "face-www.cloudflare.com", "a1b2c3d4-www.google.com") in your client
 
 ---
 

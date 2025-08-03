@@ -135,9 +135,9 @@ fi
 SERVER="$(curl -s https://api.ipify.org || hostname -I | awk '{print $1}')"
 
 if [[ -n "$PBK" && -n "$SNI" ]]; then
-    SID_VAL="$SHORT"
+    SHORT_ID="$SHORT"
     FINGERPRINT="chrome"  # Default fingerprint to match install script
-    URI="vless://${UUID}@${SERVER}:443?type=tcp&encryption=none&security=reality&pbk=${PBK}&sid=${SID_VAL}&fp=${FINGERPRINT}&sni=${SNI}#${SNI}"
+    URI="vless://${UUID}@${SERVER}:443?type=tcp&encryption=none&security=reality&pbk=${PBK}&sid=${SHORT_ID}&fp=${FINGERPRINT}&sni=${SNI}#${SHORT_ID}-${SNI}"
 
     ################################
     # Show URI before generating QR #
@@ -189,7 +189,7 @@ Systemd service    : xray (restarted)
 Fake SNI           : $SNI
 Connect to host    : $SERVER
 Public key         : $PBK (also saved to /etc/xray/public.key)
-Short ID           : $SID_VAL
+Short ID           : $SHORT_ID
 UUID               : $UUID
 
 Share the above URI or QR with your client.
