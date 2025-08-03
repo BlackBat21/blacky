@@ -1,6 +1,10 @@
-# VLESS + REALITY Automated Installer
+# Xray VLESS + REALITY Installer
 
-> Automated provisioning of an **Xray-core** VLESS VPN server with REALITY transport – plus a helper script to add extra users.
+> **One-click automated installation of Xray-core VLESS proxy with REALITY protocol for secure, censorship-resistant connections.**
+
+A lightweight, production-ready solution that transforms any Linux VPS into a high-performance VLESS proxy server with REALITY transport - no Docker, no complex configs, just two simple Bash scripts.
+
+## 📦 What's Included
 
 This repository contains two self-contained Bash scripts:
 
@@ -9,7 +13,7 @@ This repository contains two self-contained Bash scripts:
 | `install_vless_reality.sh` | One-shot installer that turns a fresh Linux VPS into a secured VLESS+REALITY server running on TCP/443. |
 | `add_vless_reality_user.sh` | Append additional client credentials (UUID / ShortID) to the running server without touching existing users. |
 
-Both scripts borrow the UX of the other installers in this repo and aim for **simplicity & minimal surface area** – no Docker, no 1 000-line configs.
+Both scripts are designed for **simplicity & minimal surface area** – no Docker, no complex configurations, just clean Bash scripts that get the job done.
 
 ---
 
@@ -37,10 +41,21 @@ _That’s it – the installer will pull `curl`, `unzip`, `qrencode`, `nginx`, e
 
 ## 🚀 Quick Start
 
-Run the installer (replace the fake SNI with any real, high-reputation domain):
+### One-Command Installation
 
 ```bash
-curl -O https://raw.githubusercontent.com/ndatg/vless-and-reality-quick-install/refs/heads/main/install_vless_reality.sh
+curl -O https://raw.githubusercontent.com/ndatg/xray-vless-reality-installer/main/install_vless_reality.sh
+sudo bash install_vless_reality.sh --sni www.cloudflare.com
+```
+
+### Alternative: Download Both Scripts
+
+```bash
+# Download both scripts
+curl -O https://raw.githubusercontent.com/ndatg/xray-vless-reality-installer/main/install_vless_reality.sh
+curl -O https://raw.githubusercontent.com/ndatg/xray-vless-reality-installer/main/add_vless_reality_user.sh
+
+# Run installation
 sudo bash install_vless_reality.sh --sni www.cloudflare.com
 ```
 
@@ -247,3 +262,4 @@ sudo systemctl disable --now nginx
 ## 🛡 Disclaimer
 
 These scripts are provided "as is" without warranty. Use them responsibly and respect the laws of your jurisdiction.
+
