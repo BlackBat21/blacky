@@ -18,6 +18,7 @@ Both scripts borrow the UX of the other installers in this repo and aim for **si
 * **REALITY Transport (TLS-less disguise)** – Avoids buying certificates whilst looking like genuine TLS traffic.
 * **Runs under `nobody` via systemd** – Hardens the Xray process by dropping privileges.
 * **Automatic key-pair & UUID generation** – Sensible defaults, but everything is overridable.
+* **Unique identifiers per user** – Each user gets a unique UUID and Short ID to prevent conflicts.
 * **Generates shareable URI + QR code** – Ready to import into V2RayN/Clash/etc.
 * **Optional nginx website on :80** – Redirects all HTTP traffic to the fake SNI for extra camouflage.
 * **Enables TCP BBR congestion control** – Boosts throughput on supported kernels.
@@ -67,8 +68,8 @@ Required:
 
 Optional:
   --server <ip/host>    Public address clients should connect to (auto-detected)
-  --uuid   <uuid>       Pre-set client UUID (defaults to `uuidgen`)
-  --short  <hex>        ShortID 1-16 hex chars (default: random)
+  --uuid   <uuid>       Pre-set client UUID (defaults to auto-generated)
+  --short  <hex>        ShortID 1-16 hex chars (defaults to auto-generated)
   --fp     <name>       TLS fingerprint shown to clients (default: chrome)
 ```
 
@@ -86,16 +87,29 @@ Behind the scenes the script will:
 
 ```bash
 sudo bash add_vless_reality_user.sh [--uuid <uuid>] [--short <hex>] [--config <path>]
+
+Required:
+  (none - all parameters are optional)
+
+Optional:
+  --uuid   <uuid>       Pre-set client UUID (defaults to auto-generated)
+  --short  <hex>        ShortID 1-16 hex chars (defaults to auto-generated unique ID)
+  --config <path>       Custom config file path (defaults to /etc/xray/config.json)
 ```
 
-* Modifies the `clients` array in the existing Xray config.
-* Optionally appends a ShortID to the shared list.
-* Reloads the service via `systemctl restart xray`.
-* Outputs the ready-to-share URI + QR code for the new user.
+Behind the scenes the script will:
+1. Generate a unique UUID if not provided (using `uuidgen` or fallback methods).
+2. Generate a unique ShortID if not provided (using `openssl rand -hex 4`).
+3. Check for duplicate UUIDs and ShortIDs to prevent conflicts.
+4. Add the new client to the existing Xray configuration.
+5. Restart the Xray service to apply changes.
+6. Generate and display the import URI with QR code for the new user.
 
 ---
 
 ## 👥 Adding Additional Users
+
+### Automatic Generation (Recommended)
 
 Generate a new UUID and ShortID automatically:
 
@@ -103,7 +117,15 @@ Generate a new UUID and ShortID automatically:
 sudo bash add_vless_reality_user.sh
 ```
 
-Provide your own values:
+This will:
+- Generate a unique UUID automatically
+- Generate a unique 8-character hex ShortID (e.g., `a1b2c3d4`)
+- Check for conflicts with existing users
+- Create the connection URI and QR code
+
+### Manual Values
+
+Provide your own UUID and/or ShortID:
 
 ```bash
 sudo bash add_vless_reality_user.sh \
@@ -111,7 +133,45 @@ sudo bash add_vless_reality_user.sh \
   --short face
 ```
 
-The script reuses the stored public key and SNI to create a fully-formed URI.
+**Important**: ShortIDs must be 1-16 hexadecimal characters only (`0-9`, `a-f`).
+
+Valid examples: `face`, `dead`, `beef`, `cafe`, `1234`, `abcd`, `f00d`
+
+### What Happens
+
+The script will:
+1. Reuse the stored public key and SNI from the original installation
+2. Add the new user without affecting existing users
+3. Generate a complete VLESS+REALITY URI with all parameters
+4. Create both PNG and ASCII QR codes for easy sharing
+5. Restart Xray service to apply the changes
+
+### Example Output
+
+Both installation and user addition scripts provide consistent output:
+
+```
+Generated VLESS+REALITY URI (copy or scan):
+vless://uuid@server:443?type=tcp&encryption=none&security=reality&pbk=key&sid=shortid&fp=chrome&sni=domain#domain
+
+[ASCII QR CODE displayed here]
+
+QR code saved to: /etc/xray/vless-uuid.png
+
+✔ [Installation completed! / Additional user added!]
+
+Configuration file : /etc/xray/config.json
+Systemd service    : xray (running/restarted)
+Fake SNI           : domain
+Connect to host    : server
+Public key         : key (also saved to /etc/xray/public.key)
+Short ID           : shortid
+UUID               : uuid
+
+Share the above URI or QR with your client.
+
+Check service status with: systemctl status xray
+```
 
 ---
 
@@ -123,7 +183,42 @@ The script reuses the stored public key and SNI to create a fully-formed URI.
 | `/etc/xray/config.json` | Main configuration (created by installer) |
 | `/etc/xray/public.key` | Saved REALITY public key |
 | `/etc/systemd/system/xray.service` | systemd service unit |
-| `/etc/xray/vless-*.png` | Generated QR codes |
+| `/etc/xray/vless-<UUID>.png` | Generated QR codes (named by user UUID) |
+
+---
+
+## 🔑 Understanding Short IDs
+
+**Short IDs** are hexadecimal identifiers required by the REALITY protocol for client authentication and traffic routing.
+
+### Key Points:
+- **Format**: 1-16 hexadecimal characters (`0-9`, `a-f`)
+- **Purpose**: Client identification and connection validation
+- **Uniqueness**: Each user should have their own unique Short ID
+- **Security**: Acts as an additional authentication layer
+
+### Valid Short ID Examples:
+```
+face    (4 chars)
+dead    (4 chars) 
+beef    (4 chars)
+cafe    (4 chars)
+1234    (4 chars)
+abcdef  (6 chars)
+a1b2c3d4 (8 chars - default auto-generated length)
+```
+
+### Invalid Examples:
+```
+john-laptop  ❌ (contains non-hex characters)
+user123      ❌ (contains 'u', 'r', 's')
+mobile       ❌ (contains 'm', 'i', 'l')
+```
+
+### Usage Tips:
+- Use Short IDs as connection names in your VPN client
+- Choose memorable hex combinations like `face`, `dead`, `beef`
+- Auto-generated Short IDs are 8 characters long for good uniqueness
 
 ---
 

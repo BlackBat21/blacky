@@ -276,18 +276,24 @@ systemctl reload nginx
 
 URI="vless://${UUID}@${SERVER}:443?type=tcp&encryption=none&security=reality&pbk=${PUBLIC_KEY}&sid=${SHORT_ID}&fp=${FINGERPRINT}&sni=${SNI}#${SNI}"
 
-QR_OUTPUT="/etc/xray/vless-reality-${SERVER}.png"
-qrencode -o "$QR_OUTPUT" -l H -t png -- "$URI"
-
 cat <<GENERATE
 
 Generated VLESS+REALITY URI (copy or scan):
 $URI
 GENERATE
 
-qrencode -t ANSIUTF8 -- "$URI"
+# Ensure qrencode is installed (should be from dependencies, but double-check)
+if command -v qrencode &>/dev/null; then
+    QR_OUTPUT="/etc/xray/vless-${UUID}.png"
+    qrencode -o "$QR_OUTPUT" -l H -t png -- "$URI"
 
-echo -e "\nQR code saved to: $QR_OUTPUT"
+    # Show ASCII QR for quick scan
+    qrencode -t ANSIUTF8 -- "$URI"
+
+    echo -e "\nQR code saved to: $QR_OUTPUT"
+else
+    echo -e "\nqrencode not available - QR code generation skipped"
+fi
 
 ################################
 # 9. Completion message        #
@@ -305,7 +311,7 @@ Public key         : $PUBLIC_KEY (also saved to /etc/xray/public.key)
 Short ID           : $SHORT_ID
 UUID               : $UUID
 
-To add more users later run:  sudo bash /usr/local/bin/add_vless_reality_user.sh
+To add more users later run:  sudo bash add_vless_reality_user.sh
 
 Share the above URI or QR with your client.
 

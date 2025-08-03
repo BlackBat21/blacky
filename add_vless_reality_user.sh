@@ -55,6 +55,30 @@ if [[ -z "$UUID" ]]; then
     fi
 fi
 
+# Generate Short ID if missing
+if [[ -z "$SHORT" ]]; then
+    # Generate a unique Short ID that doesn't already exist
+    EXISTING_SIDS=$(jq -r '.inbounds[0].streamSettings.realitySettings.shortIds[]? // empty' "$CONFIG" 2>/dev/null | tr '\n' ' ')
+    
+    for attempt in {1..10}; do
+        if command -v openssl &>/dev/null; then
+            SHORT="$(openssl rand -hex 4)"
+        else
+            # Fallback method using /dev/urandom
+            SHORT="$(head -c 4 /dev/urandom 2>/dev/null | xxd -p || printf '%08x' $((RANDOM * RANDOM)))"
+        fi
+        
+        # Check if this Short ID already exists
+        if [[ ! " $EXISTING_SIDS " =~ " $SHORT " ]]; then
+            break
+        fi
+        
+        if [[ $attempt -eq 10 ]]; then
+            echo "Warning: Could not generate unique Short ID after 10 attempts. Using: $SHORT"
+        fi
+    done
+fi
+
 # Ensure jq is installed
 if ! command -v jq &>/dev/null; then
     echo "Installing jq ..."
@@ -74,14 +98,26 @@ fi
 TMP=$(mktemp)
 cp "$CONFIG" "$TMP"
 
+# Check if UUID already exists
+if jq -e --arg uuid "$UUID" '.inbounds[0].settings.clients[]? | select(.id == $uuid)' "$TMP" &>/dev/null; then
+    echo "Warning: UUID $UUID already exists in configuration. Skipping UUID addition."
+else
+    echo "Adding new UUID: $UUID"
+fi
+
 # Add client UUID
 jq --arg uuid "$UUID" '(.inbounds[0].settings.clients //= []) | (.inbounds[0].settings.clients |= (if (map(.id) | index($uuid)) then . else . + [{"id":$uuid}] end))' "$TMP" > "$TMP.new"
 
-# Add ShortID if provided
-if [[ -n "$SHORT" ]]; then
-    jq --arg sid "$SHORT" '(.inbounds[0].streamSettings.realitySettings.shortIds //= []) | (.inbounds[0].streamSettings.realitySettings.shortIds |= (if index($sid) then . else . + [$sid] end))' "$TMP.new" > "$TMP"
-    mv "$TMP" "$TMP.new"
+# Check if Short ID already exists
+if jq -e --arg sid "$SHORT" '.inbounds[0].streamSettings.realitySettings.shortIds[]? | select(. == $sid)' "$TMP.new" &>/dev/null; then
+    echo "Warning: Short ID $SHORT already exists in configuration. Skipping Short ID addition."
+else
+    echo "Adding new Short ID: $SHORT"
 fi
+
+# Add ShortID (always add since we always generate one now)
+jq --arg sid "$SHORT" '(.inbounds[0].streamSettings.realitySettings.shortIds //= []) | (.inbounds[0].streamSettings.realitySettings.shortIds |= (if index($sid) then . else . + [$sid] end))' "$TMP.new" > "$TMP"
+mv "$TMP" "$TMP.new"
 
 mv "$TMP.new" "$CONFIG"
 rm "$TMP" || true
@@ -99,8 +135,9 @@ fi
 SERVER="$(curl -s https://api.ipify.org || hostname -I | awk '{print $1}')"
 
 if [[ -n "$PBK" && -n "$SNI" ]]; then
-    SID_VAL="${SHORT:-$(jq -r '.inbounds[0].streamSettings.realitySettings.shortIds[0]' "$CONFIG")}"
-    URI="vless://${UUID}@${SERVER}:443?type=tcp&encryption=none&security=reality&pbk=${PBK}&sid=${SID_VAL}&sni=${SNI}#${SNI}"
+    SID_VAL="$SHORT"
+    FINGERPRINT="chrome"  # Default fingerprint to match install script
+    URI="vless://${UUID}@${SERVER}:443?type=tcp&encryption=none&security=reality&pbk=${PBK}&sid=${SID_VAL}&fp=${FINGERPRINT}&sni=${SNI}#${SNI}"
 
     ################################
     # Show URI before generating QR #
@@ -142,7 +179,7 @@ GENERATE
         echo -e "\nQR code saved to: $PNG"
     fi
 
-    # Final summary without duplicate URI/QR path
+    # Final summary
     cat <<SUMMARY
 
 ✔ Additional VLESS + REALITY user added!
@@ -155,5 +192,8 @@ Public key         : $PBK (also saved to /etc/xray/public.key)
 Short ID           : $SID_VAL
 UUID               : $UUID
 
+Share the above URI or QR with your client.
+
+Check service status with: systemctl status xray
 SUMMARY
 fi 
