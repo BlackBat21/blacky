@@ -175,7 +175,7 @@ cat > "$CONFIG_PATH" <<EOF
   },
   "inbounds": [
     {
-      "port": 2025,
+      "port": 443,
       "listen": "0.0.0.0",
       "protocol": "vless",
       "settings": {
