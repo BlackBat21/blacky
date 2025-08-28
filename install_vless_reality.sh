@@ -191,7 +191,7 @@ cat > "$CONFIG_PATH" <<EOF
         "security": "reality",
         "realitySettings": {
           "show": false,
-          "dest": "$SNI:2025",
+          "dest": "$SNI:443",
           "xver": 0,
           "serverNames": [
             "$SNI"
